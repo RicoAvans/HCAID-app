@@ -1,11 +1,11 @@
 import streamlit as st
-from turtle import onclick
 import pandas
 import numpy
 import time
 import tensorflow as tf
 from tensorflow import keras
 
+# ========================================= Config =========================================
 st.set_page_config(page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items={
     'Get Help': None,
     'Report a bug': "mailto:rr.kronenburg@student.avans.nl",
@@ -16,13 +16,19 @@ if 'resultsReady' not in st.session_state:
     st.session_state.resultsReady = False
 
 
+# ========================================= Neural network =========================================
+@st.cache(allow_output_mutation=True)
+def fetch_model():
+    models = tf.keras.models.load_model('model_save/model84')
+    return models
+
+
 # ========================================= Start pagina =========================================
-
 def welcome():
-
     # -------------------------------- Functionaliteit --------------------------------
     def switch_to_questionair():
         st.session_state["page"] = "questionair"
+        del st.session_state.resultsReady
 
     # -------------------------------- UI --------------------------------
     st.title('Caffeïne en slapen')
@@ -37,11 +43,9 @@ def welcome():
 
 # ========================================= Vragenlijst pagina ====================================
 def questionair():
-
     # -------------------------------- Functionaliteit --------------------------------
     def switch_to_results():
         st.session_state["page"] = "results"
-        del st.session_state.resultsReady
 
     # -------------------------------- UI --------------------------------
     st.title('Vragenlijst')
@@ -73,11 +77,14 @@ def questionair():
     form.radio("Als je gaat slapen, hoe lang lig je nog wakker voordat je slaapt?",
                ('Minder dan 10 min', 'Tussen 10 min en 30 min', 'Tussen 30 min en 1 uur', 'Meer dan 1 uur'))
     form.radio(
-        "Welk cijfer geef je de kwaliteit van je slaap? Denk aan moeilijk in slaap komen, vaak wakker worden, etc. (Hoger is beter)",
+        "Welk cijfer geef je de kwaliteit van je slaap? Denk aan moeilijk in slaap komen, vaak wakker worden, "
+        "etc. (Hoger is beter)",
         ('1', '2', '3', '4', '5'))
 
     # Now add a submit button to the form:
     form.form_submit_button("Submit")
+
+    model = fetch_model()
 
     st.button("Bereken tijd tot in slaap komen", on_click=switch_to_results)
 
@@ -85,6 +92,7 @@ def questionair():
 # ========================================= Resultaat pagina =========================================
 def results():
     st.session_state.resultsReady = True
+
     # -------------------------------- Functionaliteit --------------------------------
     def switch_to_questionair():
         st.session_state["page"] = "questionair"
@@ -93,16 +101,21 @@ def results():
     def switch_to_welcome():
         st.session_state["page"] = "welcome"
 
+    # -------------------------------- Neural network --------------------------------
+
+    #model = fetch_model()
+    #Y = model.predict(X, verbose=2)
 
     # -------------------------------- UI --------------------------------
     st.title("Resultaten")
 
-    col1, buff, col2 = st.columns([2,1,2])
+    col1, buff, col2 = st.columns([2, 1, 2])
     with col1:
         st.button("Vul de vragenlijst opnieuw in", on_click=switch_to_questionair)
 
     with col2:
         st.button("Terug naar welkom scherm", on_click=switch_to_welcome)
+
 
 # # ========================================= Sidebar =========================================
 sidebar = st.sidebar
@@ -121,8 +134,6 @@ if st.session_state.resultsReady is True:
     button_results = st.sidebar.button("Resultaten")
     if button_results:
         st.session_state["page"] = "results"
-# ========================================= Session state =========================================
-
 
 # ========================================= Wisselen van pagina =========================================
 pages = {
