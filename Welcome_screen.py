@@ -5,16 +5,30 @@ import numpy
 import time
 import tensorflow as tf
 from tensorflow import keras
+from PIL import Image
 
 # ========================================= Config =========================================
 st.set_page_config(page_icon=None, layout="centered", initial_sidebar_state="collapsed", menu_items={
     'Get Help': None,
     'Report a bug': "mailto:rr.kronenburg@student.avans.nl",
-    'About': "Gemaakt door Ricardo Kronenburg, Mechatronica student aan Avans Hogeschool Breda "
+    'About': "Made by Ricardo Kronenburg, Mechatronica student at Avans Hogeschool Breda "
 })
 
 if 'resultsReady' not in st.session_state:
     st.session_state.resultsReady = False
+
+if 'hoeveel' not in st.session_state:
+    st.session_state.hoeveel = 0
+
+# ========================================= Images =========================================
+koffieplaatje = Image.open('koffie.jpg.')
+slapenplaatje = Image.open('slapen.jpg.')
+
+col1, col2 = st.columns([1, 1])
+with col1:
+    st.image(koffieplaatje, width=328)
+with col2:
+    st.image(slapenplaatje)
 
 
 # ========================================= Neural network =========================================
@@ -24,131 +38,144 @@ def fetch_model():
     return models
 
 
-# ========================================= Start pagina =========================================
+# ========================================= Welcome page =========================================
 def welcome():
-    # -------------------------------- Functionaliteit --------------------------------
+    # -------------------------------- Switching pages --------------------------------
     def switch_to_questionair():
         st.session_state["page"] = "questionair"
         del st.session_state.resultsReady
 
     # -------------------------------- UI --------------------------------
-    st.title('Caffeïne en slapen')
+    st.title('Caffeine and sleeping')
 
-    st.subheader('Welkom')
-    st.subheader('Uitleg vragen')
-    st.subheader('Uitleg soort AI')
-    st.caption("**Alle data die u invult wordt niet opgeslagen en is op geen enkele manier naar u terug te leiden**")
+    st.subheader('Welcome')
+    st.write("Welcome to the Artificial Intelligence based questionnaire on caffeine intake and sleeping. "
+             "Because you are here you are probably having trouble sleeping and would like to find out if your "
+             "caffeine intake might have anything to do with that.")
 
-    st.button("Start", on_click=switch_to_questionair)
+    st.subheader('Explanation questions')
+    st.write("The questionnaire consists of 3 questions, the first 2 will be about your caffeine intake, where the "
+             "final question will be about your sleeping schedule.*")
+    st.caption("*The data you provide in the form is in no way linkable to you and  will be deleted "
+               "once you close this tab")
+    st.write("")
+    st.write("")
+    st.write("")
+
+    with st.expander("Explanation Artificial Intelligence"):
+        st.write("Artificial Intelligence (AI) is the theory and development of computer systems able to perform "
+                 "tasks normally requiring human intelligence, such as visual perception, speech recognition, "
+                 "decision-making, and translation between languages.")
+        st.write("An AI needs to be trained before it is able to make decisions. This AI has been trained by "
+                 "volunteers answering the same questionnaire you will be filling in. The correlation between their "
+                 "caffeine intake pattern, sleeping schedule and time it took them to fall asleep was used to "
+                 "make a prediction-model. This model is able to, given a set of answers, predict the time it "
+                 "will take you to fal asleep*.")
+        st.caption("*While testing the used AI model, it scored an accuracy of 84% on the answers from the volunteers. "
+                   "This however does not mean that it's prediction is perfect. The time it will take you to fall "
+                   "asleep is affected by your caffeine intake, but not limited to it. This time is also affected "
+                   "by stress levels, melatonin production, temperature, etc. If you don't consume any caffeine "
+                   "and still have trouble falling asleep, please consider contacting a licensed doctor.")
+
+    st.write("")
+    st.write("")
+    st.button("Start form", on_click=switch_to_questionair)
 
 
-# ========================================= Vragenlijst pagina ====================================
+# ========================================= Questionnaire page ====================================
 def questionair():
-    # -------------------------------- Functionaliteit --------------------------------
+    # -------------------------------- Switching pages --------------------------------
     def switch_to_results():
         st.session_state["page"] = "results"
 
     # -------------------------------- UI --------------------------------
-    st.title('Vragenlijst')
+    st.title('Questionnaire')
 
-    # st.subheader('Welkom')
-
-    form = st.form("my_form")
+    form = st.form("Caffeine intake")
     with form:
-        st.subheader('Cafeïne gebruik')
-        st.markdown('Hoeveel cafeïnehoudende producten nuttig je?')
+        st.subheader('Caffeine intake')
+        st.markdown(
+            'How many caffeine holding products you you consume and when? For instance coffee and energy drink, '
+            'but this also includes preworkout, chocolate and some thea as they can also hold caffeine.')
         st.write('')
 
+    hoeveel_per_dag = form.radio("How many caffeine holding products do you consume per day?",
+                                 ('None', '1 to 2 per day', '3 to 4 per day', '5 to 6 per day', 'More than 6 per day'))
 
-    hoeveel_per_dag = form.radio("Hoeveel cafeïnehoudende producten producten (koffie/thee/cola/energydrank/"
-               "preworkout/etc.) nuttig je per dag? Je mag de consumpties per dag bij elkaar "
-               "optellen",
-               ('Geen', '1 tot 2 per dag', '3 tot 4 per dag', '5 tot 6 per dag', 'Meer dan 6 per dag'))
     def categorise_hoeveel(hoeveel_per_dag):
-        if hoeveel_per_dag == "Geen":
+        if hoeveel_per_dag == "None":
             return 0
-        elif hoeveel_per_dag == "1 tot 2 per dag":
+        elif hoeveel_per_dag == "1 to 2 per day":
             return 1
-        elif hoeveel_per_dag == "3 tot 4 per dag":
+        elif hoeveel_per_dag == "3 to 4 per day":
             return 3
-        elif hoeveel_per_dag == "5 tot 6 per dag":
+        elif hoeveel_per_dag == "5 to 6 per day":
             return 5
-        elif hoeveel_per_dag == "meer dan 6 per dag":
+        elif hoeveel_per_dag == "More than 6 per day":
             return 7
-    #st.session_state["data"]["hoeveel"] = [categorise_hoeveel(hoeveel_per_dag)]
 
+    st.session_state.hoeveel = categorise_hoeveel(hoeveel_per_dag)
 
-    wanneer_laatste = form.radio("Wanneer heb je (meestal) je laatste cafeïnehoudende product van de dag?",
-               ('Voor of tijdens de lunch', 'Tussen 15:00 en 17:00', 'Tussen 17:00 en 19:00', 'Tussen 19:00 en 21:00',
-                'Tussen 21:00 en 23:00', 'Na 23:00'))
+    wanneer_laatste = form.radio("When do you usually have your last caffeine holding product of the day?",
+                                 ('Before or during lunch', 'Between 15:00 and 17:00', 'Between 17:00 and 19:00',
+                                  'Between 19:00 and 21:00',
+                                  'Between 21:00 and 23:00', 'After 23:00'))
+
     def categorise_wanneer(wanneer):
-        if wanneer == "Voor of tijdens de lunch":
+        if wanneer == "Before or during lunch":
             return 0
-        elif wanneer == "Tussen 15:00 en 17:00":
+        elif wanneer == "Between 15:00 and 17:00":
             return 15
-        elif wanneer == "Tussen 17:00 en 19:00":
+        elif wanneer == "Between 17:00 and 19:00":
             return 17
-        elif wanneer == "Tussen 19:00 en 21:00":
+        elif wanneer == "Between 19:00 and 21:00":
             return 19
-        elif wanneer == "Tussen 21:00 en 23:00":
+        elif wanneer == "Between 21:00 and 23:00":
             return 21
-        elif wanneer == "Na 23:00":
+        elif wanneer == "After 23:00":
             return 23
+
     st.session_state["data"]["wanneer"] = [categorise_wanneer(wanneer_laatste)]
 
     with form:
         st.write('')
-        st.subheader('Slapen')
-        st.write('Hoe laat slaap je en hoe hoog is de kwaliteit?')
+        st.subheader('Sleeping')
+        st.write('Let us find out about your sleeping schedule.')
 
-        laat_bed = form.radio("Hoe laat ga je doordeweeks gemiddeld naar bed?",
-               ('Tussen 21:00 en 22:00', 'Tussen 22:00 en 23:00', 'Tussen 23:00 en 00:00', 'Tussen 00:00 en 02:00',
-                'Tussen 02:00 en 04:00'))
+        laat_bed = form.radio("At what time do you usually go to bed?",
+                              ('Between 21:00 and 22:00', 'Between 22:00 and 23:00', 'Between 23:00 and 00:00',
+                               'Between 00:00 and 02:00',
+                               'Between 02:00 and 04:00'))
+
         def categorise_laat(laat):
-            if laat == "Tussen 21:00 en 22:00":
+            if laat == "Between 21:00 and 22:00":
                 return 21
-            elif laat == "Tussen 22:00 en 23:00":
+            elif laat == "Between 22:00 and 23:00":
                 return 22
-            elif laat == "Tussen 23:00 en 00:00":
+            elif laat == "Between 23:00 and 00:00":
                 return 23
-            elif laat == "Tussen 00:00 en 02:00":
+            elif laat == "Between 00:00 and 02:00":
                 return 24
-            elif laat == "Tussen 02:00 en 04:00":
+            elif laat == "Between 02:00 and 04:00":
                 return 26
 
         st.session_state["data"]["laat"] = [categorise_laat(laat_bed)]
 
-        #kwaliteit_slapen = form.radio(
-        #"Welk cijfer geef je de kwaliteit van je slaap? Denk aan moeilijk in slaap komen, vaak wakker worden, "
-        #"etc. (Hoger is beter)",
-        #('1', '2', '3', '4', '5'))
-
-
+        st.write("")
+        st.write("")
         # Add a submit button to the form:
-        form.form_submit_button("Submit")
+        st.form_submit_button("Save")
 
-    # features = {
-    #     'hoeveel_per_dag': hoeveel_per_dag,
-    #     'wanneer_laatste': wanneer_laatste,
-    #     'laat_bed': laat_bed,
-    #     'lang_tot_slapen': lang_tot_slapen,
-    #     'kwaliteit_slapen': kwaliteit_slapen,
-    # }
-    #
-    # featuresDF = pd.DataFrame([features])
-    # featuresDF2 = featuresDF.drop(["hoeveel", "lang", "kwaliteit"])
-    # featuresList = featuresDF2.values.tolist()
-
-
-
-    st.button("Bereken tijd tot in slaap komen", on_click=switch_to_results)
+    st.write("")
+    st.write("")
+    st.button("Predict estimated time to fall asleep", on_click=switch_to_results)
 
 
 # ========================================= Resultaat pagina =========================================
 def results():
     st.session_state.resultsReady = True
 
-    # -------------------------------- Functionaliteit --------------------------------
+    # -------------------------------- Switching pages --------------------------------
     def switch_to_questionair():
         st.session_state["page"] = "questionair"
         del st.session_state.resultsReady
@@ -156,58 +183,189 @@ def results():
     def switch_to_welcome():
         st.session_state["page"] = "welcome"
 
-    # -------------------------------- Neural network --------------------------------
-
-
-    #model = fetch_model()
-    #Y = model.predict(X, verbose=2)
-
     # -------------------------------- UI --------------------------------
-    st.title("Resultaten")
+    st.title("Results")
+
+    # ------------- Fetching model and predicting -------------
     df = pd.DataFrame(st.session_state["data"])
     model = fetch_model()
-
     prediction = model.predict(df)
-    st.write(prediction)
-    # st.write(prediction[0])
-    # st.write(prediction[0][0])
-    # st.write(prediction[0][1])
-    # st.write(prediction[0][2])
-    # st.write(prediction[0][3])
 
-    total = prediction[0][0] + prediction[0][1] + prediction[0][2] + prediction[0][3]
-    st.write(total)
+    result_numbers = pd.DataFrame(prediction[0])
+    result_numbers = result_numbers.values.tolist()
+    max_pred = max(result_numbers)
+
+    # ------------- Instantiating big result subheader -------------
+    big_result = st.container()
+
+    # ------------- Composing result paragraph -------------
+    story1 = "The Artificial Intelligence has determined that you will most likely fall asleep "
+    resultstring = ""
+    story2 = "based on your chosen caffeine intake."
+    conclusion = ""
+
+    if max_pred == result_numbers[0]:
+        resultstring = "in less than 10 minutes"
+        conclusion = "Which is absolutely great, that means that you don't consume any caffeine too close to bedtime!"
+        st.write(story1, resultstring, story2, conclusion)
+        max_pred = result_numbers[0][0]
+        category = 0
+
+    elif max_pred == result_numbers[1]:
+        resultstring = "between 10 and 30 minutes"
+        conclusion = "Which is not that bad, but there is some room for improvement regarding your caffeine intake."
+        st.write(story1, resultstring, story2, conclusion)
+        max_pred = result_numbers[1][0]
+        category = 1
+
+    elif max_pred == result_numbers[2]:
+        resultstring = "between 30 minutes and 1 hour"
+        conclusion = "Which is not desirable, you most likely consume caffeine right before you go to bed, there is" \
+                     "definitely room for improvement regarding your caffeine intake."
+        st.write(story1, resultstring, story2, conclusion)
+        max_pred = result_numbers[2][0]
+        category = 2
+
+    elif max_pred == result_numbers[3]:
+        resultstring = "after more than 1 hour"
+        conclusion = "It must be dreadful to have to lay awake for so long, wondering why you can't" \
+                     " catch some sleep. You would most likely benefit from a change in your caffeine intake, " \
+                     "below are some tips."
+        st.write(story1, resultstring, story2, conclusion)
+        max_pred = result_numbers[3][0]
+        category = 3
+
+    else:
+        st.write("We are sorry, an error has occurred, please refresh the page and try again, if the error persists, "
+                 "click *report a bug* in the menu on the top right "
+                 "corner of your screen to email support. Please include the following error: ")
+        st.write(">ERROR: MAX_PRED != RESULT")
+        category = 99
+        st.stop()
+
+    # ------------- Filling in big result subheader -------------
+    big_result_string = "You will most likely fall asleep " + resultstring
+    big_result.subheader(big_result_string)
+
+    # ------------- Certainty progress bar -------------
+    st.write(f"{(int(max_pred * 100))}%", " certainty")
+    st.progress(int(max_pred * 100))
+    st.write("See the *Explanation* paragraph for more information about the certainty of the AI.", ':point_down:')
+    st.markdown(
+        """
+        <style>
+            .stProgress > div > div > div > div {
+                background-color: green;
+            }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+
+    # ------------- Tips Paragraph composing -------------
+    st.subheader("Tips")
+    if category == 0:
+        st.write("You are doing amazing at not consuming any caffeine before bed, keep up the good work!")
+    elif category == 1:
+        st.write("You are having almost no caffeine before bed, but at the times you are consuming it, it might"
+                 " still be affecting the duration until you fall asleep. Therefore you might consider"
+                 " consuming your products earlier, or better yet, not consume them at all.")
+    elif category == 2:
+        st.write("You are having caffeine close to bed, which is very likely to be affecting your sleep. "
+                 "Therefore you might consider consuming your products earlier, or better yet, "
+                 "not consume them at all. ")
+    elif category == 3:
+        st.write("You consume caffeine right before going to bed, maybe a bar of chocolate or you go to the gym "
+                 "at night and use preworkout there. This is heavily affecting your sleep, it is recommended you "
+                 "stop consuming caffeine before bed. Try to drink a glass of water instead as during the night "
+                 "you are losing moisture from your body. Preventing dehydration and good sleep quality "
+                 "ups your energy levels during the day. Up to a point where you might not even need caffeine at "
+                 "all to stay awake! Good luck!")
+
+    if st.session_state.hoeveel > 2:
+        st.write("You are however consuming more than 2 products with caffeine per day, and could"
+                 " consider reducing your overall caffeine intake.")
+    elif st.session_state.hoeveel == 0:
+        st.write("You don't consume any caffeine, that's very good of you and healthy, keep it up!")
+    else:
+        st.write("You are having 2 or less caffeine holding products per day, quite good!")
+
+    # ------------- Explanation Paragraph composing -------------
+    st.subheader("Explanation")
+    st.write("The Artificial Intelligence (AI) works based on a percentage of certainty, these percentages are "
+             "displayed below.")
+    st.write("")
+
+    less, ten, thirty, hour = st.columns([1, 1, 1, 1])
+
+    with less:
+        st.write("**Less than 10min**")
+        st.write("The AI thinks for ", f"{(int(result_numbers[0][0] * 100))}%", " that you fall in this category.")
+        st.write(f"{(int(result_numbers[0][0] * 100))}%")
+        st.progress(int(result_numbers[0][0] * 100))
+
+    with ten:
+        st.write("**Between 10 and 30mins**")
+        st.write("The AI thinks for ", f"{(int(result_numbers[1][0] * 100))}%", " that you fall in this category.")
+        st.write(f"{(int(result_numbers[1][0] * 100))}%")
+        st.progress(int(result_numbers[1][0] * 100))
+
+    with thirty:
+        st.write("**Between 30mins and 1h**")
+        st.write("The AI thinks for ", f"{(int(result_numbers[2][0] * 100))}%", " that you fall in this category.")
+        st.write(f"{(int(result_numbers[2][0] * 100))}%")
+        st.progress(int(result_numbers[2][0] * 100))
+
+    with hour:
+        st.write("**More than 1h**")
+        st.write("The AI thinks for ", f"{(int(result_numbers[3][0] * 100))}%", " that you fall in this category.")
+        st.write(f"{(int(result_numbers[3][0] * 100))}%")
+        st.progress(int(result_numbers[3][0] * 100))
+
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
 
 
 
+    # ------------- Thank you and buttons -------------
+    empty1, middle, empty2 = st.columns([1, 2, 1])
+    middle.subheader("Thanks for using this AI!")
 
-    col1, buff, col2 = st.columns([2, 1, 2])
-    with col1:
-        st.button("Vul de vragenlijst opnieuw in", on_click=switch_to_questionair)
+    left, buff, right = st.columns([2, 1, 2])
+    with left:
+        st.button("Fill the questionnaire in again", on_click=switch_to_questionair)
 
-    with col2:
-        st.button("Terug naar welkom scherm", on_click=switch_to_welcome)
+    with right:
+        st.button("Back to welcome screen", on_click=switch_to_welcome)
+
+    st.caption("The results and tips given by this Artificial Intelligence are not medical advice and should not be "
+               "treated as such.")
 
 
 # ========================================= Sidebar =========================================
 sidebar = st.sidebar
-sidebar.header('Caffeïne gebruik en slapen')
-sidebar.subheader('Wissel hier van tablad')
+sidebar.header('Caffeine intake and sleeping')
+sidebar.subheader('Switch tabs here')
 
-button_welcome = st.sidebar.button("Welkom")
+button_welcome = st.sidebar.button("Welcome")
 if button_welcome:
     st.session_state["page"] = "welcome"
 
-button_vragen = st.sidebar.button("Vragenlijst")
+button_vragen = st.sidebar.button("Questionnaire")
 if button_vragen:
     st.session_state["page"] = "questionair"
 
 if st.session_state.resultsReady is True:
-    button_results = st.sidebar.button("Resultaten")
+    button_results = st.sidebar.button("Results")
     if button_results:
         st.session_state["page"] = "results"
 
-# ========================================= Wisselen van pagina =========================================
+# ========================================= Switching pages =========================================
 pages = {
     "welcome": welcome,
     "questionair": questionair,
