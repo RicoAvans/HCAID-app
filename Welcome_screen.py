@@ -21,14 +21,16 @@ if 'hoeveel' not in st.session_state:
     st.session_state.hoeveel = 0
 
 # ========================================= Images =========================================
-koffieplaatje = Image.open('koffie.jpg.')
-slapenplaatje = Image.open('slapen.jpg.')
+# Images sadly don't want to work on the online version, on laptop locally they do work.
 
-col1, col2 = st.columns([1, 1])
-with col1:
-    st.image(koffieplaatje, width=328)
-with col2:
-    st.image(slapenplaatje)
+# koffieplaatje = Image.open('koffie.jpg.')
+# slapenplaatje = Image.open('slapen.jpg.')
+#
+# col1, col2 = st.columns([1, 1])
+# with col1:
+#     st.image(koffieplaatje, width=328)
+# with col2:
+#     st.image(slapenplaatje)
 
 
 # ========================================= Neural network =========================================
@@ -329,8 +331,6 @@ def results():
     st.write("")
     st.write("")
     st.write("")
-
-
 
     # ------------- Thank you and buttons -------------
     empty1, middle, empty2 = st.columns([1, 2, 1])
