@@ -2,5 +2,4 @@ pandas
 streamlit
 pandas
 numpy
-time
 tensorflow
